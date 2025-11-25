@@ -34,4 +34,7 @@ fi
 
 # 启动开发服务器
 echo "🌐 启动开发服务器..."
+echo "📡 外部访问地址: http://43.143.37.243:9835"
+echo "🏠 本地访问地址: http://localhost:9835"
+echo ""
 npm run dev

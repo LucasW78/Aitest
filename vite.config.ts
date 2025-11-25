@@ -10,7 +10,11 @@ export default defineConfig({
     }
   },
   server: {
-    port: 3000,
+    port: 9835,
+    host: '0.0.0.0'
+  },
+  preview: {
+    port: 9835,
     host: '0.0.0.0'
   }
 })

@@ -78,6 +78,9 @@ npm install
 ```bash
 npm run dev
 ```
+访问地址：
+- 本地访问：http://localhost:9835
+- 外部访问：http://43.143.37.243:9835
 
 ### 构建生产版本
 ```bash
@@ -87,6 +90,11 @@ npm run build
 ### 预览生产版本
 ```bash
 npm run preview
+```
+
+### 快速启动
+```bash
+./start.sh
 ```
 
 ## 使用指南
