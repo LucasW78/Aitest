@@ -199,7 +199,6 @@
         <!-- 文档头部信息 -->
         <div class="preview-header">
           <div class="document-info">
-            <h3 class="document-title">{{ selectedDocument.title }}</h3>
             <div class="document-meta">
               <span class="meta-item">
                 <el-icon><Calendar /></el-icon>

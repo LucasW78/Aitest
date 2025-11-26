@@ -1057,8 +1057,15 @@ onMounted(() => {
 
 onUnmounted(() => {
   // 清理资源
-  if (jm.value) {
-    jm.value.remove_event_listener()
+  try {
+    if (jm.value && typeof jm.value.remove_event_listener === 'function') {
+      jm.value.remove_event_listener()
+    } else if (jm.value && jm.value.mind) {
+      // 尝试使用其他清理方法
+      jm.value.mind.container.innerHTML = ''
+    }
+  } catch (error) {
+    console.warn('JsMind cleanup error:', error)
   }
 })
 </script>

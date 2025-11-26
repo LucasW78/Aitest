@@ -19,7 +19,10 @@
               :limit="1"
               accept=".txt,.md,.doc,.docx,.pdf,.jpg,.jpeg,.png"
               drag
-              @change="handleFileChange"
+              :file-list="fileList"
+              :disabled="!!uploadedFile"
+              :on-change="handleFileChange"
+              :on-remove="handleFileRemove"
             >
               <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
               <div class="el-upload__text">
@@ -32,15 +35,18 @@
               </template>
             </el-upload>
 
-            <div v-if="uploadedFile" class="uploaded-file-info">
-              <el-alert
-                :title="`已上传文件: ${uploadedFile.name}`"
-                type="success"
-                :closable="false"
-                show-icon
-              />
+            <div v-if="uploadedFile" class="uploaded-file-actions">
+              <el-button type="primary" @click="generateTestCaseFromFile" :loading="generatingFromFile">
+                <el-icon><MagicStick /></el-icon>
+                生成测试用例
+              </el-button>
+              <el-button type="danger" @click="clearUploadFile">
+                <el-icon><Delete /></el-icon>
+                删除上传的文件
+              </el-button>
             </div>
-          </el-card>
+
+            </el-card>
         </div>
 
         <!-- 在线输入区域 -->
@@ -50,7 +56,6 @@
               <div class="section-header">
                 <el-icon><EditPen /></el-icon>
                 <span>在线输入</span>
-                <el-tag type="info" size="small">{{ inputText.length }}/2028</el-tag>
               </div>
             </template>
 
@@ -59,16 +64,13 @@
               type="textarea"
               :rows="12"
               placeholder="请输入需求描述文本，支持多语言、数字、特殊字符、空格、回车..."
-              maxlength="2028"
-              show-word-limit
               class="input-textarea"
-              @input="handleInputChange"
             />
 
             <div class="input-actions">
               <el-button @click="clearInput">清空</el-button>
-              <el-button type="primary" @click="generateTestCase" :loading="generating">
-                <el-icon><Magic /></el-icon>
+              <el-button type="primary" @click="generateTestCaseFromInput" :loading="generatingFromInput">
+                <el-icon><MagicStick /></el-icon>
                 生成测试用例
               </el-button>
             </div>
@@ -84,6 +86,10 @@
               <el-icon><Share /></el-icon>
               <span>测试用例输出</span>
               <div class="output-actions">
+                <el-button size="small" @click="verifyTestCase" :disabled="!testCaseData">
+                  <el-icon><Check /></el-icon>
+                  二次校验
+                </el-button>
                 <el-button size="small" @click="clearOutput" :disabled="!testCaseData">
                   <el-icon><Delete /></el-icon>
                   清空
@@ -187,14 +193,16 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { UploadFilled } from '@element-plus/icons-vue'
+import { UploadFilled, Document, Delete, MagicStick, Check } from '@element-plus/icons-vue'
 import JsMindViewer from '@/components/JsMindViewer.vue'
 import type { TestCaseNode, UploadFile } from '@/types'
 
 // 响应式数据
 const inputText = ref('')
 const uploadedFile = ref<File | null>(null)
-const generating = ref(false)
+const fileList = ref<any[]>([])
+const generatingFromInput = ref(false)
+const generatingFromFile = ref(false)
 const testCaseData = ref<TestCaseNode | null>(null)
 const jsMindRef = ref<InstanceType<typeof JsMindViewer>>()
 
@@ -293,63 +301,76 @@ const sampleTestCaseData: TestCaseNode = {
 }
 
 // 方法
-const handleFileChange = (file: any) => {
+const handleFileChange = (file: any, uploadFileList: any[]) => {
+  // Element Plus传递的是file对象，不是raw属性
   uploadedFile.value = file.raw
-
-  // 模拟文件内容读取
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    const content = e.target?.result as string
-    if (inputText.value.length + content.length <= 2028) {
-      inputText.value += content
-    } else {
-      ElMessage.warning('文件内容加上已有输入超过字符限制')
-    }
-  }
-
-  if (uploadedFile.value.type.startsWith('image/')) {
-    // 对于图片，模拟OCR识别结果
-    setTimeout(() => {
-      inputText.value += '\n[图片OCR识别结果]: 这是一个包含用户登录流程的界面截图，包含用户名输入框、密码输入框和登录按钮。'
-    }, 1000)
-  } else {
-    reader.readAsText(uploadedFile.value)
-  }
+  fileList.value = uploadFileList
 }
 
-const handleInputChange = () => {
-  // 输入变化时的处理逻辑
-  if (inputText.value.length > 2028) {
-    ElMessage.error('输入内容不能超过2028个字符')
-    inputText.value = inputText.value.substring(0, 2028)
-  }
+const handleFileRemove = (file: any, uploadFileList: any[]) => {
+  uploadedFile.value = null
+  fileList.value = uploadFileList
+  ElMessage.info('已删除上传的文件')
 }
+
 
 const clearInput = () => {
   inputText.value = ''
   uploadedFile.value = null
+  fileList.value = []
 }
 
-const generateTestCase = async () => {
-  if (!inputText.value.trim() && !uploadedFile.value) {
-    ElMessage.warning('请输入需求描述或上传文件')
+const clearUploadFile = () => {
+  uploadedFile.value = null
+  fileList.value = []
+  ElMessage.info('已删除上传的文件')
+}
+
+const generateTestCaseFromInput = async () => {
+  // 严格检查：只处理输入文本，忽略文件状态
+  if (!inputText.value || inputText.value.trim() === '') {
+    ElMessage.warning('请输入需求描述')
     return
   }
 
-  generating.value = true
+  generatingFromInput.value = true
 
   try {
     // 模拟AI生成过程
     await new Promise(resolve => setTimeout(resolve, 2000))
 
-    // 这里应该调用后端AI接口，现在使用示例数据
+    // 这里应该调用后端AI接口处理输入文本，现在使用示例数据
     testCaseData.value = { ...sampleTestCaseData }
 
-    ElMessage.success('测试用例生成成功！')
+    ElMessage.success('基于输入文本生成测试用例成功！')
   } catch (error) {
     ElMessage.error('生成测试用例失败，请重试')
   } finally {
-    generating.value = false
+    generatingFromInput.value = false
+  }
+}
+
+const generateTestCaseFromFile = async () => {
+  // 严格检查：只处理上传文件，忽略输入文本状态
+  if (!uploadedFile.value) {
+    ElMessage.warning('请上传文件')
+    return
+  }
+
+  generatingFromFile.value = true
+
+  try {
+    // 模拟AI生成过程
+    await new Promise(resolve => setTimeout(resolve, 2000))
+
+    // 这里应该调用后端AI接口处理文件，现在使用示例数据
+    testCaseData.value = { ...sampleTestCaseData }
+
+    ElMessage.success('基于上传文件生成测试用例成功！')
+  } catch (error) {
+    ElMessage.error('生成测试用例失败，请重试')
+  } finally {
+    generatingFromFile.value = false
   }
 }
 
@@ -361,6 +382,20 @@ const loadSampleData = () => {
 
 const clearOutput = () => {
   testCaseData.value = null
+}
+
+const verifyTestCase = () => {
+  if (!testCaseData.value) {
+    ElMessage.warning('没有可校验的测试用例数据')
+    return
+  }
+
+  // 模拟二次校验过程
+  ElMessage.info('正在进行二次校验...')
+
+  setTimeout(() => {
+    ElMessage.success('二次校验完成，测试用例格式正确')
+  }, 1500)
 }
 
 const exportTestCase = () => {
@@ -570,9 +605,13 @@ const handleDataChange = (data: TestCaseNode) => {
   min-height: 200px;
 }
 
-.uploaded-file-info {
-  margin-top: 16px;
+.uploaded-file-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
 }
+
 
 .input-section {
   flex: 1;
