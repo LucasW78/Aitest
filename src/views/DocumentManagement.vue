@@ -125,13 +125,9 @@
             </template>
           </el-table-column>
 
-          <el-table-column label="操作栏" width="280" fixed="right">
+          <el-table-column label="操作栏" width="200" fixed="right">
             <template #default="{ row }">
               <div class="action-buttons">
-                <el-button size="small" type="primary" @click="editDocument(row)">
-                  <el-icon><Edit /></el-icon>
-                  编辑
-                </el-button>
                 <el-button size="small" type="success" @click="downloadDocument(row)">
                   <el-icon><Download /></el-icon>
                   下载
@@ -196,29 +192,47 @@
       </template>
     </el-dialog>
 
-    <!-- 编辑对话框 -->
-    <el-dialog v-model="showEditDialog" title="编辑文档" width="800px">
-      <el-form :model="editForm">
-        <el-form-item label="文档标题：">
-          <el-input v-model="editForm.title" placeholder="请输入文档标题" />
-        </el-form-item>
-        <el-form-item label="标签：">
-          <el-input v-model="editForm.tags" placeholder="请输入标签，用逗号分隔" />
-        </el-form-item>
-        <el-form-item label="文档内容：">
-          <el-input
-            v-model="editForm.content"
-            type="textarea"
-            :rows="10"
-            placeholder="请输入文档内容"
-          />
-        </el-form-item>
-      </el-form>
+  
+    <!-- 预览对话框 -->
+    <el-dialog v-model="showPreviewDialog" title="文档预览" width="900px" class="preview-dialog">
+      <div v-if="selectedDocument" class="preview-content">
+        <!-- 文档头部信息 -->
+        <div class="preview-header">
+          <div class="document-info">
+            <h3 class="document-title">{{ selectedDocument.title }}</h3>
+            <div class="document-meta">
+              <span class="meta-item">
+                <el-icon><Calendar /></el-icon>
+                上传时间：{{ formatDate(selectedDocument.uploadTime) }}
+              </span>
+              <span class="meta-item">
+                <el-icon><CollectionTag /></el-icon>
+                标签：
+                <el-tag
+                  v-for="(tag, index) in selectedDocument.tags"
+                  :key="index"
+                  size="small"
+                  type="info"
+                  style="margin-left: 4px"
+                >
+                  {{ tag }}
+                </el-tag>
+              </span>
+            </div>
+          </div>
+        </div>
 
-      <template #footer>
-        <el-button @click="showEditDialog = false">取消</el-button>
-        <el-button type="primary" @click="confirmEdit">确认修改</el-button>
-      </template>
+        <!-- 文档内容 -->
+        <div class="preview-body">
+          <div class="content-label">
+            <el-icon><DocumentIcon /></el-icon>
+            文档内容
+          </div>
+          <div class="content-text">
+            {{ selectedDocument.content }}
+          </div>
+        </div>
+      </div>
     </el-dialog>
   </div>
 </template>
@@ -226,6 +240,9 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import {
+  Search, Plus, Upload, Delete, Calendar, CollectionTag, Document as DocumentIcon
+} from '@element-plus/icons-vue'
 import type { Document, FilterConditions, Pagination } from '@/types'
 
 // 响应式数据
@@ -267,21 +284,15 @@ const pagination = reactive<Pagination>({
 
 // 对话框控制
 const showUploadDialog = ref(false)
-const showEditDialog = ref(false)
+const showPreviewDialog = ref(false)
 const uploadFile = ref<File | null>(null)
 const showTagInput = ref<Record<number, boolean>>({})
 const newTag = ref('')
+const selectedDocument = ref<Document | null>(null)
 
 // 表单数据
 const uploadForm = reactive({
   title: '',
-  tags: ''
-})
-
-const editForm = reactive({
-  id: '',
-  title: '',
-  content: '',
   tags: ''
 })
 
@@ -390,29 +401,10 @@ const confirmUpload = async () => {
 }
 
 const viewDocument = (doc: Document) => {
-  ElMessage.info(`查看文档: ${doc.title}`)
+  selectedDocument.value = doc
+  showPreviewDialog.value = true
 }
 
-const editDocument = (doc: Document) => {
-  editForm.id = doc.id
-  editForm.title = doc.title
-  editForm.content = doc.content
-  editForm.tags = doc.tags.join(', ')
-  showEditDialog.value = true
-}
-
-const confirmEdit = () => {
-  const docIndex = documents.value.findIndex(doc => doc.id === editForm.id)
-  if (docIndex !== -1) {
-    documents.value[docIndex].title = editForm.title
-    documents.value[docIndex].content = editForm.content
-    documents.value[docIndex].tags = editForm.tags
-      ? editForm.tags.split(',').map(tag => tag.trim()).filter(Boolean)
-      : []
-    ElMessage.success('文档修改成功')
-    showEditDialog.value = false
-  }
-}
 
 const downloadDocument = (doc: Document) => {
   // 模拟下载
@@ -652,6 +644,113 @@ onMounted(() => {
 
   .action-buttons .el-button {
     width: 100%;
+  }
+}
+
+/* 预览对话框样式 */
+:deep(.preview-dialog) {
+  border-radius: 12px;
+}
+
+.preview-content {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.preview-header {
+  padding: 20px 0;
+  border-bottom: 1px solid #e4e7ed;
+  margin-bottom: 20px;
+}
+
+.document-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.document-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: normal;
+  color: #409eff;
+  line-height: 1.4;
+}
+
+.document-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #606266;
+}
+
+.meta-item .el-icon {
+  font-size: 16px;
+  color: #909399;
+}
+
+.preview-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.content-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+  padding: 8px 0;
+  border-bottom: 2px solid #e4e7ed;
+}
+
+.content-label .el-icon {
+  font-size: 18px;
+  color: #409eff;
+}
+
+.content-text {
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  line-height: 1.8;
+  font-size: 14px;
+  color: #495057;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+:deep(.preview-dialog .el-dialog__body) {
+  padding: 24px;
+}
+
+/* 预览对话框响应式 */
+@media (max-width: 768px) {
+  :deep(.preview-dialog) {
+    width: 95% !important;
+    margin: 0 auto;
+  }
+
+  .document-meta {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .content-text {
+    padding: 16px;
+    font-size: 13px;
   }
 }
 </style>

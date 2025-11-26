@@ -11,7 +11,8 @@ export default defineConfig({
   },
   server: {
     port: 9835,
-    host: '0.0.0.0'
+    host: '0.0.0.0',
+    strictPort: true // 强制使用指定端口
   },
   preview: {
     port: 9835,
