@@ -10,7 +10,6 @@ export interface Document {
 
 // 筛选条件类型
 export interface FilterConditions {
-  keyword?: string
   title?: string
   tags: string[]
 }

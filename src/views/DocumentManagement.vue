@@ -11,23 +11,12 @@
         </template>
 
         <el-form :model="filterConditions" :inline="true" class="filter-form">
-          <el-form-item label="模糊搜索：">
-            <el-input
-              v-model="filterConditions.keyword"
-              placeholder="搜索文档内容"
-              clearable
-              class="filter-input"
-              @input="handleFilter"
-            />
-          </el-form-item>
-
           <el-form-item label="文档标题：">
             <el-input
               v-model="filterConditions.title"
               placeholder="搜索文档标题"
               clearable
               class="filter-input"
-              @input="handleFilter"
             />
           </el-form-item>
 
@@ -37,7 +26,7 @@
               multiple
               placeholder="选择标签"
               class="filter-select"
-              @change="handleFilter"
+              clearable
             >
               <el-option
                 v-for="tag in availableTags"
@@ -118,8 +107,10 @@
                   v-model="newTag"
                   size="small"
                   class="tag-input"
+                  ref="tagInputRefs"
                   @blur="addTag($index)"
                   @keyup.enter="addTag($index)"
+                  @keyup.esc="cancelAddTag($index)"
                 />
               </div>
             </template>
@@ -237,7 +228,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Search, Plus, Upload, Delete, Calendar, CollectionTag, Document as DocumentIcon
@@ -270,7 +261,6 @@ const documents = ref<Document[]>([
 ])
 
 const filterConditions = reactive<FilterConditions>({
-  keyword: '',
   title: '',
   tags: []
 })
@@ -304,16 +294,11 @@ const availableTags = computed(() => {
   return Array.from(tagSet)
 })
 
-const filteredDocuments = computed(() => {
-  let filtered = documents.value
+const filteredDocuments = ref<Document[]>([])
+const allFilteredDocuments = ref<Document[]>([])
 
-  // 模糊搜索（文档内容）
-  if (filterConditions.keyword) {
-    const keyword = filterConditions.keyword.toLowerCase()
-    filtered = filtered.filter(doc =>
-      doc.content.toLowerCase().includes(keyword)
-    )
-  }
+const applyFilter = () => {
+  let filtered = documents.value
 
   // 标题搜索
   if (filterConditions.title) {
@@ -323,40 +308,49 @@ const filteredDocuments = computed(() => {
     )
   }
 
-  // 标签筛选（且关系）
+  // 标签筛选（或关系）
   if (filterConditions.tags.length > 0) {
     filtered = filtered.filter(doc =>
-      filterConditions.tags.every(tag => doc.tags.includes(tag))
+      filterConditions.tags.some(tag => doc.tags.includes(tag))
     )
   }
 
+  allFilteredDocuments.value = filtered
   pagination.total = filtered.length
 
-  // 分页
+  // 重置到第一页
+  pagination.current = 1
+
+  // 应用分页
+  applyPagination()
+}
+
+const applyPagination = () => {
   const start = (pagination.current - 1) * pagination.pageSize
   const end = start + pagination.pageSize
-  return filtered.slice(start, end)
-})
+  filteredDocuments.value = allFilteredDocuments.value.slice(start, end)
+}
 
 // 方法
 const handleFilter = () => {
-  pagination.current = 1
+  applyFilter()
 }
 
 const resetFilter = () => {
-  filterConditions.keyword = ''
   filterConditions.title = ''
   filterConditions.tags = []
-  pagination.current = 1
+  applyFilter()
 }
 
 const handleSizeChange = (size: number) => {
   pagination.pageSize = size
   pagination.current = 1
+  applyPagination()
 }
 
 const handleCurrentChange = (current: number) => {
   pagination.current = current
+  applyPagination()
 }
 
 const formatDate = (date: Date) => {
@@ -439,6 +433,18 @@ const deleteDocument = (doc: Document) => {
 const showAddTag = (index: number) => {
   showTagInput.value[index] = true
   newTag.value = ''
+  // 自动聚焦到输入框
+  nextTick(() => {
+    const inputRefs = document.querySelectorAll('.tag-input input')
+    if (inputRefs[index]) {
+      inputRefs[index].focus()
+    }
+  })
+}
+
+const cancelAddTag = (index: number) => {
+  showTagInput.value[index] = false
+  newTag.value = ''
 }
 
 const addTag = (index: number) => {
@@ -464,7 +470,7 @@ const removeTag = (rowIndex: number, tagIndex: number) => {
 }
 
 onMounted(() => {
-  pagination.total = documents.value.length
+  applyFilter()
 })
 </script>
 
