@@ -88,7 +88,7 @@
                   <el-icon><Delete /></el-icon>
                   清空
                 </el-button>
-                <el-button size="small" @click="exportTestCase" :disabled="!testCaseData">
+                                <el-button size="small" @click="exportTestCase" :disabled="!testCaseData">
                   <el-icon><Download /></el-icon>
                   导出
                 </el-button>
@@ -107,25 +107,88 @@
             </div>
 
             <div v-else class="mind-map-container">
-              <MindMap
+              <JsMindViewer
                 :data="testCaseData"
                 :editable="true"
                 @node-click="handleNodeClick"
-                @node-edit="handleNodeEdit"
                 @data-change="handleDataChange"
+                ref="jsMindRef"
               />
             </div>
           </div>
         </el-card>
       </div>
     </div>
-  </div>
+
+    <!-- 导出格式选择对话框 -->
+    <el-dialog v-model="showExportDialog" title="选择导出格式" width="500px">
+      <div class="format-selection">
+        <div class="format-cards">
+          <div
+            class="format-card"
+            :class="{ active: selectedExportFormat === 'json' }"
+            @click="selectedExportFormat = 'json'"
+          >
+            <div class="format-header">
+              <el-icon class="format-icon"><Document /></el-icon>
+              <h3>JSON 格式</h3>
+            </div>
+            <div class="format-desc">
+              <p>结构化数据格式，便于程序解析和处理</p>
+              <ul>
+                <li>完整保留所有测试数据</li>
+                <li>便于程序读取和编辑</li>
+                <li>支持数据处理和备份</li>
+              </ul>
+            </div>
+            <div class="format-features">
+              <el-tag type="success" size="small">完整数据</el-tag>
+              <el-tag type="info" size="small">程序友好</el-tag>
+            </div>
+          </div>
+
+          <div
+            class="format-card"
+            :class="{ active: selectedExportFormat === 'xmind' }"
+            @click="selectedExportFormat = 'xmind'"
+          >
+            <div class="format-header">
+              <el-icon class="format-icon"><Share /></el-icon>
+              <h3>XMind 格式</h3>
+            </div>
+            <div class="format-desc">
+              <p>专业思维导图格式，兼容XMind软件</p>
+              <ul>
+                <li>思维导图可视化展示</li>
+                <li>支持XMind专业软件</li>
+                <li>便于团队协作和展示</li>
+              </ul>
+            </div>
+            <div class="format-features">
+              <el-tag type="warning" size="small">可视化</el-tag>
+              <el-tag type="primary" size="small">专业软件</el-tag>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <el-button @click="showExportDialog = false">取消</el-button>
+        <el-button type="primary" @click="confirmExport">
+          <el-icon><Download /></el-icon>
+          确认导出
+        </el-button>
+      </template>
+    </el-dialog>
+
+      </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
-import { ElMessage } from 'element-plus'
-import MindMap from '@/components/MindMap.vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { UploadFilled } from '@element-plus/icons-vue'
+import JsMindViewer from '@/components/JsMindViewer.vue'
 import type { TestCaseNode, UploadFile } from '@/types'
 
 // 响应式数据
@@ -133,6 +196,12 @@ const inputText = ref('')
 const uploadedFile = ref<File | null>(null)
 const generating = ref(false)
 const testCaseData = ref<TestCaseNode | null>(null)
+const jsMindRef = ref<InstanceType<typeof JsMindViewer>>()
+
+// 导出相关数据
+const showExportDialog = ref(false)
+const selectedExportFormat = ref('json')
+
 
 // 示例数据
 const sampleTestCaseData: TestCaseNode = {
@@ -285,9 +354,10 @@ const generateTestCase = async () => {
 }
 
 const loadSampleData = () => {
-  testCaseData.value = { ...sampleTestCaseData }
+  testCaseData.value = JSON.parse(JSON.stringify(sampleTestCaseData))
   ElMessage.success('示例数据加载成功')
 }
+
 
 const clearOutput = () => {
   testCaseData.value = null
@@ -299,7 +369,20 @@ const exportTestCase = () => {
     return
   }
 
-  // 导出为JSON格式
+  // 显示格式选择卡片
+  showExportDialog.value = true
+}
+
+const confirmExport = () => {
+  if (selectedExportFormat.value === 'json') {
+    exportAsJSON()
+  } else if (selectedExportFormat.value === 'xmind') {
+    exportAsXMind()
+  }
+  showExportDialog.value = false
+}
+
+const exportAsJSON = () => {
   const dataStr = JSON.stringify(testCaseData.value, null, 2)
   const dataBlob = new Blob([dataStr], { type: 'application/json' })
   const url = URL.createObjectURL(dataBlob)
@@ -309,16 +392,129 @@ const exportTestCase = () => {
   link.click()
   URL.revokeObjectURL(url)
 
-  ElMessage.success('测试用例导出成功')
+  ElMessage.success('JSON格式测试用例导出成功')
+}
+
+const exportAsXMind = async () => {
+  try {
+    // 动态导入JSZip用于创建ZIP文件
+    const JSZip = await import('jszip')
+    const zip = new JSZip.default()
+
+    // 生成content.xml内容
+    const xmindContent = generateSimpleXMind(testCaseData.value!)
+
+    // 添加必要的XMind文件结构
+    zip.file('content.xml', xmindContent)
+
+    // 添加META-INF目录和manifest.xml
+    const manifestContent = generateManifestXML()
+    zip.file('META-INF/manifest.xml', manifestContent)
+
+    // 生成ZIP文件
+    const zipBlob = await zip.generateAsync({ type: 'blob' })
+
+    const url = URL.createObjectURL(zipBlob)
+    const link = document.createElement('a')
+    link.href = url
+
+    // 使用测试用例的一级标题作为文件名
+    const fileName = testCaseData.value?.label || '测试用例'
+    const safeFileName = fileName.replace(/[\\/:*?"<>|]/g, '_') + '.xmind'
+    link.download = safeFileName
+
+    link.click()
+    URL.revokeObjectURL(url)
+
+    ElMessage.success('XMind格式测试用例导出成功')
+  } catch (error) {
+    ElMessage.error('XMind导出失败')
+    console.error('XMind export error:', error)
+  }
+}
+
+const generateSimpleXMind = (node: TestCaseNode): string => {
+  const convertNode = (n: TestCaseNode, level: number = 0): string => {
+    const indent = '  '.repeat(level)
+
+    // 统一使用简单的topic结构，避免复杂的嵌套
+    let result = `${indent}<topic id="${n.id}" timestamp="${Date.now()}">\n`
+    result += `${indent}  <title>${escapeXML(n.label)}</title>\n`
+
+    // 简化扩展数据，避免复杂的结构
+    if (n.data?.testType || n.data?.steps?.length || n.data?.expected) {
+      result += `${indent}  <notes>\n`
+      result += `${indent}    <plain>${escapeXML(n.label)}\n\n`
+
+      if (n.data?.testType) {
+        result += `测试类型: ${escapeXML(n.data.testType)}\n\n`
+      }
+      if (n.data?.steps?.length) {
+        result += `测试步骤:\n`
+        n.data.steps.forEach((step, index) => {
+          result += `${index + 1}. ${escapeXML(step)}\n`
+        })
+        result += `\n`
+      }
+      if (n.data?.expected) {
+        result += `预期结果: ${escapeXML(n.data.expected)}\n`
+      }
+
+      result += `</plain>\n`
+      result += `${indent}  </notes>\n`
+    }
+
+    // 递归处理子节点
+    if (n.children && n.children.length > 0) {
+      result += `${indent}  <children>\n`
+      result += `${indent}    <topics type="attached">\n`
+      n.children.forEach(child => {
+        result += convertNode(child, level + 2)
+      })
+      result += `${indent}    </topics>\n`
+      result += `${indent}  </children>\n`
+    }
+
+    result += `${indent}</topic>\n`
+    return result
+  }
+
+  // 使用更简单但兼容的XMind结构
+  return `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<xmap-content xmlns="urn:xmind:xmap:xmlns:content:1.0" xmlns:fo="http://www.w3.org/1999/XSL/Format" xmlns:svg="http://www.w3.org/2000/svg" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.0">
+  <sheet id="sheet_${Date.now()}" theme="theme_${Date.now()}">
+    <title>${escapeXML(node.label)}</title>
+    ${convertNode(node)}
+  </sheet>
+</xmap-content>`
+}
+
+const generateManifestXML = (): string => {
+  return `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<manifest xmlns="urn:xmind:xmap:xmlns:manifest:1.0" version="1.0">
+  <file-entry full-path="content.xml" media-type="text/xml"/>
+  <file-entry full-path="META-INF/" media-type=""/>
+  <file-entry full-path="META-INF/manifest.xml" media-type="text/xml"/>
+</manifest>`
+}
+
+const generateStylesXML = (): string => {
+  return `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<xmap-styles xmlns="urn:xmind:xmap:xmlns:style:1.0" version="1.0">
+</xmap-styles>`
+}
+
+const escapeXML = (text: string): string => {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
 }
 
 const handleNodeClick = (node: TestCaseNode) => {
-  console.log('Node clicked:', node)
-  ElMessage.info(`点击了节点: ${node.label}`)
-}
-
-const handleNodeEdit = (node: TestCaseNode) => {
-  console.log('Node edited:', node)
+  ElMessage.info(`选择了节点: ${node.label}`)
 }
 
 const handleDataChange = (data: TestCaseNode) => {
@@ -516,6 +712,101 @@ const handleDataChange = (data: TestCaseNode) => {
   .section-header {
     flex-wrap: wrap;
     gap: 4px;
+  }
+}
+
+/* 导出格式选择卡片样式 */
+.format-selection {
+  padding: 8px 0;
+}
+
+.format-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.format-card {
+  border: 2px solid #e4e7ed;
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.format-card:hover {
+  border-color: #409eff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.2);
+}
+
+.format-card.active {
+  border-color: #409eff;
+  background-color: #ecf5ff;
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+}
+
+.format-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.format-icon {
+  font-size: 28px;
+  color: #409eff;
+}
+
+.format-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.format-desc p {
+  margin: 0 0 8px 0;
+  color: #606266;
+  font-size: 14px;
+}
+
+.format-desc ul {
+  margin: 0;
+  padding-left: 16px;
+  color: #909399;
+  font-size: 13px;
+}
+
+.format-desc li {
+  margin-bottom: 2px;
+}
+
+.format-features {
+  margin-top: 12px;
+  display: flex;
+  gap: 6px;
+}
+
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .format-cards {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .format-card {
+    padding: 12px;
+  }
+
+  .format-header h3 {
+    font-size: 16px;
+  }
+
+  .format-icon {
+    font-size: 24px;
   }
 }
 </style>

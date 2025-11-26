@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<map version="1.0">
+    <node TEXT="测试项目" ID="root">
+        <node TEXT="功能测试" POSITION="right" ID="func-test">
+            <node TEXT="登录功能" ID="login">
+                <node TEXT="正确账号密码登录" ID="login-success">
+                    <node TEXT="步骤：输入账号，输入密码，点击登录" ID="login-success-steps"/>
+                    <node TEXT="预期：成功登录跳转到首页" ID="login-success-expected"/>
+                </node>
+                <node TEXT="错误密码登录" ID="login-fail">
+                    <node TEXT="步骤：输入正确账号，输入错误密码，点击登录" ID="login-fail-steps"/>
+                    <node TEXT="预期：显示密码错误提示" ID="login-fail-expected"/>
+                </node>
+            </node>
+            <node TEXT="搜索功能" ID="search">
+                <node TEXT="关键词搜索" ID="search-keyword">
+                    <node TEXT="步骤：输入关键词，点击搜索" ID="search-steps"/>
+                    <node TEXT="预期：显示相关结果" ID="search-expected"/>
+                </node>
+            </node>
+        </node>
+        <node TEXT="性能测试" POSITION="left" ID="perf-test">
+            <node TEXT="页面加载性能" ID="page-load">
+                <node TEXT="步骤：访问页面，记录加载时间" ID="load-steps"/>
+                <node TEXT="预期：页面在3秒内加载完成" ID="load-expected"/>
+            </node>
+        </node>
+    </node>
+</map>

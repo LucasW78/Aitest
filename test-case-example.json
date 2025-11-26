@@ -1,0 +1,126 @@
+{
+  "id": "root",
+  "label": "电商系统测试用例示例",
+  "children": [
+    {
+      "id": "user-management",
+      "label": "用户管理模块",
+      "children": [
+        {
+          "id": "user-register",
+          "label": "用户注册",
+          "data": {
+            "testType": "positive",
+            "steps": [
+              "打开注册页面",
+              "输入有效邮箱地址",
+              "输入符合要求的密码",
+              "确认密码",
+              "点击注册按钮",
+              "验证邮箱收到激活邮件"
+            ],
+            "expected": "注册成功，跳转到登录页面"
+          }
+        },
+        {
+          "id": "user-login",
+          "label": "用户登录",
+          "data": {
+            "testType": "positive",
+            "steps": [
+              "打开登录页面",
+              "输入已注册的用户名",
+              "输入正确的密码",
+              "点击登录按钮"
+            ],
+            "expected": "登录成功，跳转到用户首页"
+          }
+        },
+        {
+          "id": "password-reset",
+          "label": "密码重置",
+          "data": {
+            "testType": "positive",
+            "steps": [
+              "点击忘记密码链接",
+              "输入注册邮箱",
+              "提交重置请求",
+              "查看邮箱重置邮件",
+              "点击重置链接",
+              "设置新密码"
+            ],
+            "expected": "密码重置成功"
+          }
+        }
+      ]
+    },
+    {
+      "id": "product-module",
+      "label": "商品模块",
+      "children": [
+        {
+          "id": "product-search",
+          "label": "商品搜索",
+          "data": {
+            "testType": "positive",
+            "steps": [
+              "在搜索框输入关键词",
+              "点击搜索按钮",
+              "查看搜索结果页面"
+            ],
+            "expected": "显示相关的商品列表"
+          }
+        },
+        {
+          "id": "product-detail",
+          "label": "商品详情查看",
+          "data": {
+            "testType": "positive",
+            "steps": [
+              "点击商品链接",
+              "查看商品详情页面",
+              "验证商品信息完整性"
+            ],
+            "expected": "商品详情页面显示完整信息"
+          }
+        }
+      ]
+    },
+    {
+      "id": "order-module",
+      "label": "订单模块",
+      "children": [
+        {
+          "id": "create-order",
+          "label": "创建订单",
+          "data": {
+            "testType": "positive",
+            "steps": [
+              "选择商品加入购物车",
+              "进入购物车页面",
+              "确认商品信息",
+              "填写收货地址",
+              "选择支付方式",
+              "提交订单"
+            ],
+            "expected": "订单创建成功"
+          }
+        },
+        {
+          "id": "order-payment",
+          "label": "订单支付",
+          "data": {
+            "testType": "positive",
+            "steps": [
+              "进入订单列表",
+              "选择待支付订单",
+              "点击支付按钮",
+              "完成支付流程"
+            ],
+            "expected": "支付成功，订单状态更新"
+          }
+        }
+      ]
+    }
+  ]
+}

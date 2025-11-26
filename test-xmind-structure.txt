@@ -1,0 +1,10 @@
+标准的XMind文件应该包含以下结构：
+
+1. content.xml - 主要内容文件
+2. META-INF/
+   └── manifest.xml - 文件清单
+3. styles.xml - 样式定义
+4. [可选] metadata.xml - 元数据
+5. [可选] annotations.xml - 注释
+
+现在导出功能会创建完整的ZIP结构，使XMind软件能够识别。

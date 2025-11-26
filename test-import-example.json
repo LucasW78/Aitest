@@ -1,0 +1,107 @@
+{
+  "id": "root",
+  "label": "电商系统测试用例",
+  "children": [
+    {
+      "id": "login-tests",
+      "label": "登录功能测试",
+      "children": [
+        {
+          "id": "login-success",
+          "label": "成功登录",
+          "data": {
+            "testType": "positive",
+            "steps": [
+              "打开登录页面",
+              "输入正确的用户名",
+              "输入正确的密码",
+              "点击登录按钮"
+            ],
+            "expected": "成功登录并跳转到首页"
+          }
+        },
+        {
+          "id": "login-fail-password",
+          "label": "密码错误登录",
+          "data": {
+            "testType": "negative",
+            "steps": [
+              "打开登录页面",
+              "输入正确的用户名",
+              "输入错误的密码",
+              "点击登录按钮"
+            ],
+            "expected": "显示密码错误提示"
+          }
+        },
+        {
+          "id": "login-fail-user",
+          "label": "用户名错误登录",
+          "data": {
+            "testType": "negative",
+            "steps": [
+              "打开登录页面",
+              "输入不存在的用户名",
+              "输入任意密码",
+              "点击登录按钮"
+            ],
+            "expected": "显示用户不存在提示"
+          }
+        }
+      ]
+    },
+    {
+      "id": "payment-tests",
+      "label": "支付功能测试",
+      "children": [
+        {
+          "id": "payment-success",
+          "label": "支付成功",
+          "data": {
+            "testType": "positive",
+            "steps": [
+              "选择商品加入购物车",
+              "进入结算页面",
+              "选择支付方式",
+              "完成支付流程"
+            ],
+            "expected": "支付成功并显示订单信息"
+          }
+        },
+        {
+          "id": "payment-fail-balance",
+          "label": "余额不足",
+          "data": {
+            "testType": "boundary",
+            "steps": [
+              "选择商品加入购物车",
+              "进入结算页面",
+              "选择余额支付",
+              "余额不足时尝试支付"
+            ],
+            "expected": "显示余额不足提示"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ui-tests",
+      "label": "界面测试",
+      "children": [
+        {
+          "id": "ui-responsive",
+          "label": "响应式测试",
+          "data": {
+            "testType": "ui",
+            "steps": [
+              "在手机设备上打开页面",
+              "检查页面布局",
+              "验证功能可用性"
+            ],
+            "expected": "页面在移动设备上正常显示"
+          }
+        }
+      ]
+    }
+  ]
+}
