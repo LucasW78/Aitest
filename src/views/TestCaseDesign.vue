@@ -61,6 +61,7 @@
               placeholder="请输入需求描述文本，支持多语言、数字、特殊字符、空格、回车..."
               maxlength="2028"
               show-word-limit
+              class="input-textarea"
               @input="handleInputChange"
             />
 
@@ -338,14 +339,16 @@ const handleDataChange = (data: TestCaseNode) => {
 }
 
 .left-section {
-  width: 40%;
+  width: 38%;
   display: flex;
   flex-direction: column;
   gap: 20px;
+  min-width: 400px;
 }
 
 .right-section {
   flex: 1;
+  min-width: 500px;
 }
 
 .upload-card,
@@ -383,6 +386,15 @@ const handleDataChange = (data: TestCaseNode) => {
   display: flex;
   justify-content: space-between;
   margin-top: 16px;
+}
+
+.input-textarea {
+  width: 100%;
+}
+
+:deep(.input-textarea .el-textarea__inner) {
+  width: 100%;
+  min-height: 300px;
 }
 
 .output-actions {
@@ -424,5 +436,86 @@ const handleDataChange = (data: TestCaseNode) => {
 
 :deep(.el-textarea__inner) {
   resize: none;
+}
+
+/* 响应式设计 */
+@media (max-width: 1600px) {
+  .left-section {
+    width: 40%;
+    min-width: 380px;
+  }
+
+  .right-section {
+    min-width: 450px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .design-container {
+    flex-direction: column;
+    gap: 16px;
+    min-height: auto;
+  }
+
+  .left-section {
+    width: 100%;
+    min-width: auto;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  .right-section {
+    min-width: auto;
+    min-height: 500px;
+  }
+
+  .upload-card {
+    min-height: 160px;
+  }
+
+  :deep(.input-textarea .el-textarea__inner) {
+    min-height: 200px;
+  }
+}
+
+@media (max-width: 768px) {
+  .test-case-design {
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .design-container {
+    gap: 12px;
+  }
+
+  .left-section {
+    gap: 12px;
+    max-height: none;
+  }
+
+  .right-section {
+    min-height: 400px;
+  }
+
+  .upload-card,
+  .input-card,
+  .output-card {
+    height: auto;
+    min-height: auto;
+  }
+
+  .input-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .output-actions {
+    gap: 4px;
+  }
+
+  .section-header {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
 }
 </style>

@@ -16,7 +16,7 @@
               v-model="filterConditions.keyword"
               placeholder="搜索文档内容"
               clearable
-              style="width: 200px"
+              class="filter-input"
               @input="handleFilter"
             />
           </el-form-item>
@@ -26,7 +26,7 @@
               v-model="filterConditions.title"
               placeholder="搜索文档标题"
               clearable
-              style="width: 200px"
+              class="filter-input"
               @input="handleFilter"
             />
           </el-form-item>
@@ -36,7 +36,7 @@
               v-model="filterConditions.tags"
               multiple
               placeholder="选择标签"
-              style="width: 200px"
+              class="filter-select"
               @change="handleFilter"
             >
               <el-option
@@ -75,68 +75,72 @@
           </div>
         </template>
 
-        <el-table :data="filteredDocuments" stripe style="width: 100%">
+        <el-table :data="filteredDocuments" stripe class="document-table">
           <el-table-column type="index" label="序号" width="80" />
 
-          <el-table-column prop="title" label="文档标题" min-width="200">
+          <el-table-column prop="title" label="文档标题" min-width="300">
             <template #default="{ row }">
-              <el-link type="primary" @click="viewDocument(row)">
+              <el-link type="primary" @click="viewDocument(row)" class="document-title">
                 {{ row.title }}
               </el-link>
             </template>
           </el-table-column>
 
-          <el-table-column prop="uploadTime" label="上传时间" width="180">
+          <el-table-column prop="uploadTime" label="上传时间" width="200">
             <template #default="{ row }">
               {{ formatDate(row.uploadTime) }}
             </template>
           </el-table-column>
 
-          <el-table-column label="标签栏" min-width="200">
+          <el-table-column label="标签栏" min-width="250">
             <template #default="{ row, $index }">
-              <el-tag
-                v-for="(tag, index) in row.tags"
-                :key="index"
-                size="small"
-                style="margin-right: 4px; margin-bottom: 4px"
-                closable
-                @close="removeTag($index, index)"
-              >
-                {{ tag }}
-              </el-tag>
-              <el-button
-                v-if="!showTagInput[$index]"
-                size="small"
-                style="margin-left: 4px"
-                @click="showAddTag($index)"
-              >
-                <el-icon><Plus /></el-icon>
-              </el-button>
-              <el-input
-                v-if="showTagInput[$index]"
-                v-model="newTag"
-                size="small"
-                style="width: 100px; margin-left: 4px"
-                @blur="addTag($index)"
-                @keyup.enter="addTag($index)"
-              />
+              <div class="tag-container">
+                <el-tag
+                  v-for="(tag, index) in row.tags"
+                  :key="index"
+                  size="small"
+                  class="tag-item"
+                  closable
+                  @close="removeTag($index, index)"
+                >
+                  {{ tag }}
+                </el-tag>
+                <el-button
+                  v-if="!showTagInput[$index]"
+                  size="small"
+                  class="add-tag-btn"
+                  @click="showAddTag($index)"
+                >
+                  <el-icon><Plus /></el-icon>
+                </el-button>
+                <el-input
+                  v-if="showTagInput[$index]"
+                  v-model="newTag"
+                  size="small"
+                  class="tag-input"
+                  @blur="addTag($index)"
+                  @keyup.enter="addTag($index)"
+                />
+              </div>
             </template>
           </el-table-column>
 
-          <el-table-column label="操作栏" width="240">
+          <el-table-column label="操作栏" width="280" fixed="right">
             <template #default="{ row }">
-              <el-button size="small" type="primary" @click="editDocument(row)">
-                <el-icon><Edit /></el-icon>
-                编辑
-              </el-button>
-              <el-button size="small" type="success" @click="downloadDocument(row)">
-                <el-icon><Download /></el-icon>
-                下载
-              </el-button>
-              <el-button size="small" type="danger" @click="deleteDocument(row)">
-                <el-icon><Delete /></el-icon>
-                删除
-              </el-button>
+              <div class="action-buttons">
+                <el-button size="small" type="primary" @click="editDocument(row)">
+                  <el-icon><Edit /></el-icon>
+                  编辑
+                </el-button>
+                <el-button size="small" type="success" @click="downloadDocument(row)">
+                  <el-icon><Download /></el-icon>
+                  下载
+                </el-button>
+                <el-button size="small" type="danger" @click="deleteDocument(row)">
+                  <el-icon><Delete /></el-icon>
+                  删除
+                </el-button>
+              </div>
             </template>
           </el-table-column>
         </el-table>
@@ -503,6 +507,48 @@ onMounted(() => {
   align-items: center;
 }
 
+.filter-input {
+  width: 240px;
+}
+
+.filter-select {
+  width: 240px;
+}
+
+.document-table {
+  width: 100%;
+}
+
+.document-title {
+  font-weight: 500;
+}
+
+.tag-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.tag-item {
+  margin-right: 4px;
+  margin-bottom: 4px;
+}
+
+.add-tag-btn {
+  margin-left: 4px;
+}
+
+.tag-input {
+  width: 120px;
+  margin-left: 4px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 4px;
+}
+
 .list-section {
   flex: 1;
 }
@@ -539,5 +585,73 @@ onMounted(() => {
   border: 2px dashed #d9d9d9;
   border-radius: 8px;
   width: 100%;
+}
+
+/* 响应式设计 */
+@media (max-width: 1400px) {
+  .filter-input,
+  .filter-select {
+    width: 200px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .document-management {
+    gap: 16px;
+  }
+
+  .filter-form {
+    gap: 12px;
+  }
+
+  .filter-input,
+  .filter-select {
+    width: 180px;
+  }
+
+  .document-table :deep(.el-table__body-wrapper) {
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .document-management {
+    gap: 12px;
+  }
+
+  .filter-form {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .filter-form .el-form-item {
+    margin-bottom: 0;
+  }
+
+  .filter-input,
+  .filter-select {
+    width: 100%;
+  }
+
+  .filter-form .el-form-item:last-child {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 8px;
+  }
+
+  .tag-input {
+    width: 100px;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .action-buttons .el-button {
+    width: 100%;
+  }
 }
 </style>

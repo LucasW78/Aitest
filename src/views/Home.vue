@@ -68,8 +68,7 @@ const handleTabClick = (tab: any) => {
   justify-content: space-between;
   align-items: center;
   height: 64px;
-  max-width: 1200px;
-  margin: 0 auto;
+  margin: 0;
 }
 
 .logo h1 {
@@ -92,8 +91,7 @@ const handleTabClick = (tab: any) => {
 .main-content {
   flex: 1;
   padding: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
+  margin: 0;
   width: 100%;
 }
 
@@ -113,5 +111,47 @@ const handleTabClick = (tab: any) => {
 :deep(.el-tabs__content) {
   padding: 24px;
   min-height: 600px;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .header-content {
+    padding: 0 16px;
+  }
+
+  .main-content {
+    padding: 16px;
+  }
+
+  :deep(.el-tabs__content) {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 0 12px;
+  }
+
+  .header-content {
+    padding: 0;
+    gap: 8px;
+  }
+
+  .logo h1 {
+    font-size: 20px;
+  }
+
+  .username {
+    display: none;
+  }
+
+  .main-content {
+    padding: 12px;
+  }
+
+  :deep(.el-tabs__content) {
+    padding: 12px;
+  }
 }
 </style>
